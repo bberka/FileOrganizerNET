@@ -122,9 +122,11 @@ public class FileOrganizer(IFileLogger logger)
 
     private HashSet<string> GetManagedFolderNames(OrganizerConfig config)
     {
-        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        folders.Add(config.OthersFolderName);
-        folders.Add(config.SubfoldersFolderName);
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            config.OthersFolderName,
+            config.SubfoldersFolderName
+        };
         foreach (var folderName in config.ExtensionMappings.Values) folders.Add(folderName);
 
         return folders;
