@@ -1,82 +1,106 @@
 ﻿namespace FileOrganizerNET;
 
-public class FileOrganizer
+public class FileOrganizer(IFileLogger logger)
 {
-    public void Organize(string targetPath, OrganizerConfig config)
+    public void Organize(string targetPath, OrganizerConfig config, bool isRecursive, bool isDryRun)
     {
         var targetDir = new DirectoryInfo(targetPath);
         if (!targetDir.Exists)
         {
-            Console.WriteLine($"ERROR: Target directory not found: {targetPath}");
+            logger.Log($"ERROR: Target directory not found: {targetPath}");
             return;
         }
 
-        // Get all potential managed folder names for exclusion later.
+        if (isDryRun)
+        {
+            logger.Log("--- DRY RUN MODE ENABLED: No files or folders will be moved. ---");
+        }
+
         var managedFolders = GetManagedFolderNames(config);
 
-        Console.WriteLine("--- Processing Files ---");
-        ProcessFiles(targetDir, config);
-        Console.WriteLine();
+        logger.Log("\n--- Processing Files ---");
+        ProcessFiles(targetDir, config, managedFolders, isRecursive, isDryRun);
 
-        Console.WriteLine("--- Processing Folders ---");
-        ProcessFolders(targetDir, config, managedFolders);
+        logger.Log("\n--- Processing Folders ---");
+        ProcessFolders(targetDir, config, managedFolders, isDryRun);
     }
 
-    private void ProcessFiles(DirectoryInfo targetDir, OrganizerConfig config)
+    private void ProcessFiles(DirectoryInfo targetDir, OrganizerConfig config,
+        HashSet<string> managedFolders, bool isRecursive, bool isDryRun)
     {
-        foreach (var file in targetDir.GetFiles())
+        var searchOption =
+            isRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+        foreach (var file in targetDir.GetFiles("*", searchOption))
         {
-            // Skip the config file itself if it's in the target directory.
-            if (file.Name.Equals("default-config.json", StringComparison.OrdinalIgnoreCase))
+            // Skip the config file itself.
+            if (file.Name.Equals("config.json", StringComparison.OrdinalIgnoreCase)) continue;
+
+            // **CRITICAL**: In recursive mode, skip files already in a managed folder.
+            if (isRecursive && managedFolders.Contains(
+                    file.DirectoryName?.Split(Path.DirectorySeparatorChar).Last() ?? string.Empty))
+            {
                 continue;
+            }
 
             var extension = file.Extension.ToLowerInvariant();
             var destFolderName =
                 config.ExtensionMappings.GetValueOrDefault(extension, config.OthersFolderName);
             var destFolderPath = Path.Combine(targetDir.FullName, destFolderName);
+            var uniqueDestFilePath = Path.Combine(destFolderPath, file.Name);
 
-            // **CHANGE**: Create the destination folder only when it's needed.
-            // This is idempotent; it does nothing if the folder already exists.
-            Directory.CreateDirectory(destFolderPath);
-
-            var uniqueDestFilePath = GetUniqueFilePath(Path.Combine(destFolderPath, file.Name));
+            if (isDryRun)
+            {
+                logger.Log(
+                    $"[DRY RUN] Would move file: \"{file.FullName}\" -> \"{destFolderPath}\"");
+                continue; // Skip to the next file
+            }
 
             try
             {
-                Console.WriteLine($"Moving file: \"{file.Name}\" -> \"{destFolderName}\"");
+                Directory.CreateDirectory(destFolderPath);
+                uniqueDestFilePath =
+                    GetUniqueFilePath(
+                        uniqueDestFilePath); // Check for collisions only on actual move
+                logger.Log($"Moving file: \"{file.Name}\" -> \"{destFolderName}\"");
                 file.MoveTo(uniqueDestFilePath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"WARNING: Could not move \"{file.Name}\". Reason: {ex.Message}");
+                logger.Log($"WARNING: Could not move \"{file.Name}\". Reason: {ex.Message}");
             }
         }
     }
 
     private void ProcessFolders(DirectoryInfo targetDir, OrganizerConfig config,
-        HashSet<string> managedFolders)
+        HashSet<string> managedFolders, bool isDryRun)
     {
+        // Folder processing is intentionally NOT recursive to avoid complex scenarios.
+        // It cleans up the root of the target directory.
         var subfolderDestination = Path.Combine(targetDir.FullName, config.SubfoldersFolderName);
 
         foreach (var dir in targetDir.GetDirectories())
         {
-            // Skip any folder whose name matches one of our category folders.
-            // This correctly handles multiple runs.
             if (managedFolders.Contains(dir.Name)) continue;
 
-            // Ensure the main "Folders" directory exists before moving into it.
-            Directory.CreateDirectory(subfolderDestination);
             var destPath = Path.Combine(subfolderDestination, dir.Name);
+
+            if (isDryRun)
+            {
+                logger.Log(
+                    $"[DRY RUN] Would move folder: \"{dir.FullName}\" -> \"{subfolderDestination}\"");
+                continue;
+            }
 
             try
             {
-                Console.WriteLine(
-                    $"Moving folder: \"{dir.Name}\" -> \"{config.SubfoldersFolderName}\"");
+                Directory.CreateDirectory(subfolderDestination);
+                logger.Log($"Moving folder: \"{dir.Name}\" -> \"{config.SubfoldersFolderName}\"");
                 dir.MoveTo(destPath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"WARNING: Could not move \"{dir.Name}\". Reason: {ex.Message}");
+                logger.Log($"WARNING: Could not move \"{dir.Name}\". Reason: {ex.Message}");
             }
         }
     }
