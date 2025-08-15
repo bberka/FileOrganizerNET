@@ -54,13 +54,11 @@ public class FileOrganizer(IFileLogger logger)
             // Find the first rule in the configuration that the file matches.
             Rule? matchedRule = null;
             foreach (var rule in config.Rules)
-            {
                 if (DoesFileMatchRule(file, rule.Conditions))
                 {
                     matchedRule = rule;
                     break; // The first matching rule wins.
                 }
-            }
 
             // If this is a dry run, log the intended action and move to the next file.
             if (isDryRun)
