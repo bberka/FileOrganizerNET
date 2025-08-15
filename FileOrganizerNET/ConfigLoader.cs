@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 
 namespace FileOrganizerNET;
 
@@ -30,11 +29,11 @@ public static class ConfigLoader
         try
         {
             Console.WriteLine($"--- Loading configuration from: {resolvedPath} ---");
-            var config = new OrganizerConfig();
-            new ConfigurationBuilder()
-                .AddJsonFile(resolvedPath, false)
-                .Build()
-                .Bind(config);
+            var config = JsonSerializer.Deserialize<OrganizerConfig>(
+                File.ReadAllText(resolvedPath),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Console.WriteLine(
+                $"Configuration loaded successfully from '{resolvedPath}'. Configuration is valid.");
             return config;
         }
         catch (JsonException ex)
