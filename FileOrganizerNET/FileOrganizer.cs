@@ -31,17 +31,23 @@ public class FileOrganizer(IFileLogger logger)
 
         foreach (var file in targetDir.GetFiles("*", searchOption))
         {
-            // Skip the config file itself.
             if (file.Name.Equals("config.json", StringComparison.OrdinalIgnoreCase)) continue;
 
-            // **CRITICAL**: In recursive mode, skip files already in a managed folder.
             if (isRecursive && managedFolders.Contains(
                     file.DirectoryName?.Split(Path.DirectorySeparatorChar).Last() ?? string.Empty))
                 continue;
 
-            var extension = file.Extension.ToLowerInvariant();
-            var destFolderName =
-                config.ExtensionMappings.GetValueOrDefault(extension, config.OthersFolderName);
+            string? destFolderName = null;
+            foreach (var rule in config.Rules)
+                if (DoesFileMatchRule(file, rule.Conditions))
+                {
+                    destFolderName = rule.DestinationFolder;
+                    break; // The first rule wins.
+                }
+
+            // If no rule matched, use the default "Others" folder.
+            destFolderName ??= config.OthersFolderName;
+
             var destFolderPath = Path.Combine(targetDir.FullName, destFolderName);
             var uniqueDestFilePath = Path.Combine(destFolderPath, file.Name);
 
@@ -49,15 +55,13 @@ public class FileOrganizer(IFileLogger logger)
             {
                 logger.Log(
                     $"[DRY RUN] Would move file: \"{file.FullName}\" -> \"{destFolderPath}\"");
-                continue; // Skip to the next file
+                continue;
             }
 
             try
             {
                 Directory.CreateDirectory(destFolderPath);
-                uniqueDestFilePath =
-                    GetUniqueFilePath(
-                        uniqueDestFilePath); // Check for collisions only on actual move
+                uniqueDestFilePath = GetUniqueFilePath(uniqueDestFilePath);
                 logger.Log($"Moving file: \"{file.Name}\" -> \"{destFolderName}\"");
                 file.MoveTo(uniqueDestFilePath);
             }
@@ -66,6 +70,31 @@ public class FileOrganizer(IFileLogger logger)
                 logger.Log($"WARNING: Could not move \"{file.Name}\". Reason: {ex.Message}");
             }
         }
+    }
+
+    private static bool DoesFileMatchRule(FileInfo file, RuleConditions conditions)
+    {
+        if (conditions.Extensions?.Count > 0)
+            if (!conditions.Extensions.Contains(file.Extension, StringComparer.OrdinalIgnoreCase))
+                return false;
+
+        if (conditions.FileNameContains?.Count > 0)
+            if (!conditions.FileNameContains.Any(keyword =>
+                    file.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+        if (conditions.OlderThanDays.HasValue)
+            if (file.LastWriteTimeUtc > DateTime.UtcNow.AddDays(-conditions.OlderThanDays.Value))
+                return false;
+
+        if (conditions.MinSizeMb.HasValue)
+        {
+            var minSizeBytes = conditions.MinSizeMb.Value * 1024 * 1024;
+            if (file.Length < minSizeBytes)
+                return false;
+        }
+
+        return true;
     }
 
     private void ProcessFolders(DirectoryInfo targetDir, OrganizerConfig config,
@@ -101,7 +130,7 @@ public class FileOrganizer(IFileLogger logger)
         }
     }
 
-    private string GetUniqueFilePath(string intendedPath)
+    private static string GetUniqueFilePath(string intendedPath)
     {
         if (!File.Exists(intendedPath)) return intendedPath;
 
@@ -120,14 +149,15 @@ public class FileOrganizer(IFileLogger logger)
         return newPath;
     }
 
-    private HashSet<string> GetManagedFolderNames(OrganizerConfig config)
+    private static HashSet<string> GetManagedFolderNames(OrganizerConfig config)
     {
         var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             config.OthersFolderName,
             config.SubfoldersFolderName
         };
-        foreach (var folderName in config.ExtensionMappings.Values) folders.Add(folderName);
+        foreach (var folderName in config.Rules.Select(r => r.DestinationFolder).Distinct())
+            folders.Add(folderName);
 
         return folders;
     }

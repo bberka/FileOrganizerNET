@@ -1,22 +1,32 @@
-﻿namespace FileOrganizerNET;
+﻿using System.Text.Json.Serialization;
 
-/// <summary>
-///     Defines the configuration for the file organizer.
-/// </summary>
+namespace FileOrganizerNET;
+
 public class OrganizerConfig
 {
     /// <summary>
-    ///     Maps file extensions (e.g., ".jpg") to a category folder name (e.g., "Photos").
+    ///     An ordered list of rules to be applied to files.
+    ///     The first rule that a file matches will be used.
     /// </summary>
-    public Dictionary<string, string> ExtensionMappings { get; set; } = new();
+    public List<Rule> Rules { get; set; } = [];
 
-    /// <summary>
-    ///     The name of the folder for files that don't match any mapping.
-    /// </summary>
     public string OthersFolderName { get; set; } = "Others";
-
-    /// <summary>
-    ///     The name of the folder to move other subdirectories into.
-    /// </summary>
     public string SubfoldersFolderName { get; set; } = "Folders";
+}
+
+public class Rule
+{
+    public string DestinationFolder { get; set; } = string.Empty;
+    public RuleConditions Conditions { get; set; } = new();
+}
+
+public class RuleConditions
+{
+    [JsonPropertyName("extensions")] public List<string>? Extensions { get; set; }
+
+    [JsonPropertyName("fileNameContains")] public List<string>? FileNameContains { get; set; }
+
+    [JsonPropertyName("olderThanDays")] public int? OlderThanDays { get; set; }
+
+    [JsonPropertyName("minSizeMB")] public long? MinSizeMb { get; set; }
 }
