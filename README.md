@@ -75,22 +75,33 @@ dotnet run -- organize "D:\Projects" --recursive --log-file "D:\logs\organizer.l
 
 ## Configuration
 
-The behavior of the organizer is controlled by a JSON file, by default named `config.json`.
+The behavior of the organizer is controlled by a JSON file (`config.json`). The configuration is based on an ordered list of rules, where the **first rule that a file matches is the one that gets applied**.
 
 ### `config.json` Structure
 
 ```json
 {
-  "ExtensionMappings": {
-    ".pdf": "Documents",
-    ".docx": "Documents",
-    ".jpg": "Photos",
-    ".zip": "Archives",
-    ".mp4": "Videos",
-    ".cs": "Source Code",
-    ".py": "Source Code",
-    ".bat": "Scripts"
-  },
+  "Rules": [
+    {
+      "DestinationFolder": "Invoices",
+      "Conditions": {
+        "fileNameContains": ["invoice", "receipt"],
+        "extensions": [".pdf", ".docx"]
+      }
+    },
+    {
+      "DestinationFolder": "Archive",
+      "Conditions": {
+        "olderThanDays": 365
+      }
+    },
+    {
+      "DestinationFolder": "Photos",
+      "Conditions": {
+        "extensions": [".jpg", ".png"]
+      }
+    }
+  ],
   "OthersFolderName": "Others",
   "SubfoldersFolderName": "Folders"
 }
@@ -98,10 +109,24 @@ The behavior of the organizer is controlled by a JSON file, by default named `co
 
 ### Configuration Sections
 
--   **`ExtensionMappings`**: Maps a file extension (key) to a destination folder name (value). The key must be a lowercase string starting with a dot (`.`).
--   **`OthersFolderName`**: The destination for any file whose extension is not found in `ExtensionMappings`.
+-   **`Rules`**: An array of rule objects. They are processed from top to bottom.
+    -   `DestinationFolder`: The name of the folder where matching files will be moved.
+    -   `Conditions`: An object specifying all conditions that a file must meet for the rule to apply. A file must satisfy **all** conditions within a single rule.
+
+-   **`OthersFolderName`**: The destination for any file that does not match any of the defined `Rules`.
+
 -   **`SubfoldersFolderName`**: The destination for any subdirectory that is not a category folder itself.
 
+### Available Conditions
+
+You can use any combination of the following conditions within a rule's `Conditions` object:
+
+| Property           | Type          | Description                                                              |
+| ------------------ | ------------- | ------------------------------------------------------------------------ |
+| `extensions`       | Array of strings | Matches if the file's extension is in the list (case-insensitive).       |
+| `fileNameContains` | Array of strings | Matches if the file's name contains any of the keywords in the list.     |
+| `olderThanDays`    | Number        | Matches if the file's last modified date is older than this many days.   |
+| `minSizeMB`        | Number        | Matches if the file's size is greater than or equal to this many megabytes. |
 ## How It Works
 
 The tool follows a simple, two-pass process:
