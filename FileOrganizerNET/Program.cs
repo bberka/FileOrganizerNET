@@ -36,6 +36,8 @@ app.AddCommand("organize", (
     .WithDescription("Organizes files and folders in a target directory based on a configuration.");
 
 app.Run();
+
+_ = Console.ReadKey();
 return;
 
 OrganizerConfig? LoadConfiguration(string configPath)
