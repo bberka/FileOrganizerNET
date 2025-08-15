@@ -122,6 +122,33 @@ The tool follows a simple, two-pass process:
     - It checks if the directory's name is one of the special category folders defined in the config (e.g., "Photos", "Documents", "Folders", etc.).
     - If it's **not** a special category folder, it is moved into the `SubfoldersFolderName`.
 
+## Understanding the Releases
+
+Each release provides several packages for different platforms and use cases. The file names follow a consistent pattern: `FileOrganizerNET-v<VERSION>-<SLUG>.zip`. Here’s how to choose the right one for you.
+
+### Build Types
+
+-   **Self-Contained (Recommended)**: These packages include the .NET runtime and all dependencies. They are larger but work out-of-the-box without any prerequisites. If you're unsure which to download, choose this one for your platform.
+    -   Example slug: `win-x64`, `linux-x64`
+
+-   **Framework-Dependent**: These are much smaller packages, but they require you to have the [.NET 9 Runtime](https://dotnet.microsoft.com/download/dotnet/9.0) installed on your system separately. This is a good option for users who already work with .NET.
+    -   Example slug: `win-x64-framework`
+
+-   **Single-File Executable (Windows)**: This is a special self-contained package that bundles the entire application into a single `.exe` file. It's the most portable option for Windows users.
+    -   Example slug: `win-x64-single-file`
+
+### Platform Naming
+
+The "slug" in the file name tells you the target platform and architecture.
+
+| Slug Suffix         | Meaning                               |
+| ------------------- | ------------------------------------- |
+| `-win-x64`          | Windows 64-bit                        |
+| `-win-x86`          | Windows 32-bit                        |
+| `-linux-x64`        | Linux 64-bit                          |
+| `-osx-x64`          | macOS on Intel processors             |
+| `-osx-arm64`        | macOS on Apple Silicon (M1/M2/M3)     |
+
 ## License
 
 This project is licensed under the MIT License.
