@@ -1,7 +1,7 @@
-﻿using Cocona;
+﻿using System.Diagnostics;
+using Cocona;
 using FileOrganizerNET;
 using Microsoft.Extensions.DependencyInjection;
-
 
 var builder = CoconaApp.CreateBuilder();
 
@@ -31,7 +31,7 @@ app.AddCommand("organize", (
         var organizer = new FileOrganizer(logger);
 
         logger.Log($"--- Starting organization for: {targetDirectory} ---\n");
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
 
         organizer.Organize(targetDirectory, config, recursive, dryRun);
 

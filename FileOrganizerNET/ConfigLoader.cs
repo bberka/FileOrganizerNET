@@ -23,7 +23,7 @@ public static class ConfigLoader
         Console.WriteLine($"--- Loading configuration from: {resolvedPath} ---");
         var config = new OrganizerConfig();
         new ConfigurationBuilder()
-            .AddJsonFile(resolvedPath, optional: false)
+            .AddJsonFile(resolvedPath, false)
             .Build()
             .Bind(config);
 

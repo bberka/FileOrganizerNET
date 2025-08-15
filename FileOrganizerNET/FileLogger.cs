@@ -21,8 +21,6 @@ public class FileLogger : IFileLogger
     {
         Console.WriteLine(message);
         if (!string.IsNullOrWhiteSpace(_logFilePath))
-        {
             File.AppendAllText(_logFilePath, message + Environment.NewLine);
-        }
     }
 }

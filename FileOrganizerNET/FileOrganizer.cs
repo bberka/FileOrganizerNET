@@ -12,9 +12,7 @@ public class FileOrganizer(IFileLogger logger)
         }
 
         if (isDryRun)
-        {
             logger.Log("--- DRY RUN MODE ENABLED: No files or folders will be moved. ---");
-        }
 
         var managedFolders = GetManagedFolderNames(config);
 
@@ -39,9 +37,7 @@ public class FileOrganizer(IFileLogger logger)
             // **CRITICAL**: In recursive mode, skip files already in a managed folder.
             if (isRecursive && managedFolders.Contains(
                     file.DirectoryName?.Split(Path.DirectorySeparatorChar).Last() ?? string.Empty))
-            {
                 continue;
-            }
 
             var extension = file.Extension.ToLowerInvariant();
             var destFolderName =
