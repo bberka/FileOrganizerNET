@@ -7,6 +7,8 @@ var builder = CoconaApp.CreateBuilder();
 builder.Services.AddSingleton<FileOrganizer>();
 var app = builder.Build();
 
+var asmVersion = typeof(Program).Assembly.GetName().Version;
+Console.WriteLine($"FileOrganizerNET v{asmVersion}");
 const string defaultConfigName = "config.json";
 
 app.AddCommand("organize", (
