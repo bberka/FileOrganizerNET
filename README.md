@@ -83,19 +83,20 @@ The behavior of the organizer is controlled by a JSON file (`config.json`). The 
 {
   "Rules": [
     {
-      "DestinationFolder": "Invoices",
+      "Action": "Delete",
       "Conditions": {
-        "fileNameContains": ["invoice", "receipt"],
-        "extensions": [".pdf", ".docx"]
+        "extensions": [".tmp", ".log"]
       }
     },
     {
-      "DestinationFolder": "Archive",
+      "Action": "Copy",
+      "DestinationFolder": "Invoices/Backup",
       "Conditions": {
-        "olderThanDays": 365
+        "fileNameContains": ["invoice", "receipt"]
       }
     },
     {
+      "Action": "Move",
       "DestinationFolder": "Photos",
       "Conditions": {
         "extensions": [".jpg", ".png"]
@@ -109,24 +110,32 @@ The behavior of the organizer is controlled by a JSON file (`config.json`). The 
 
 ### Configuration Sections
 
--   **`Rules`**: An array of rule objects. They are processed from top to bottom.
-    -   `DestinationFolder`: The name of the folder where matching files will be moved.
-    -   `Conditions`: An object specifying all conditions that a file must meet for the rule to apply. A file must satisfy **all** conditions within a single rule.
+-   **`Rules`**: An array of rule objects, processed from top to bottom.
+    -   `Action`: (Optional) The action to perform. Can be `Move`, `Copy`, or `Delete`. **Defaults to `Move` if not specified.**
+    -   `DestinationFolder`: The name of the folder for `Move` or `Copy` actions. This is ignored for `Delete`.
+    -   `Conditions`: An object specifying all conditions that a file must meet for the rule to apply.
 
--   **`OthersFolderName`**: The destination for any file that does not match any of the defined `Rules`.
+-   **`OthersFolderName`**: The destination for any file that does not match any rules. These files are always moved.
 
 -   **`SubfoldersFolderName`**: The destination for any subdirectory that is not a category folder itself.
 
+### Available Actions
+
+| Action   | Description                                                              |
+| -------- | ------------------------------------------------------------------------ |
+| `Move`   | Moves the file to the `DestinationFolder`. This is the default action.   |
+| `Copy`   | Copies the file to the `DestinationFolder`, leaving the original intact. |
+| `Delete` | Permanently deletes the file. Use with caution.                          |
+
 ### Available Conditions
 
-You can use any combination of the following conditions within a rule's `Conditions` object:
-
-| Property           | Type          | Description                                                              |
-| ------------------ | ------------- | ------------------------------------------------------------------------ |
+| Property           | Type             | Description                                                              |
+| ------------------ | ---------------- | ------------------------------------------------------------------------ |
 | `extensions`       | Array of strings | Matches if the file's extension is in the list (case-insensitive).       |
 | `fileNameContains` | Array of strings | Matches if the file's name contains any of the keywords in the list.     |
-| `olderThanDays`    | Number        | Matches if the file's last modified date is older than this many days.   |
-| `minSizeMB`        | Number        | Matches if the file's size is greater than or equal to this many megabytes. |
+| `olderThanDays`    | Number           | Matches if the file's last modified date is older than this many days.   |
+| `minSizeMB`        | Number           | Matches if the file's size is greater than or equal to this many megabytes. |
+
 ## How It Works
 
 The tool follows a simple, two-pass process:
