@@ -34,45 +34,85 @@ A simple yet powerful command-line tool built with .NET 9 and Cocona to automati
 
 ## Usage
 
-The tool is run from the command line, pointing it to the directory you want to organize.
+The tool is run from the command line, offering several commands.
+
+### Main Commands
+
+-   **`organize`**: The primary command to organize files and folders.
+-   **`init`**: Generates a default `config.json` file.
+-   **`validate`**: Checks the syntax and structure of a `config.json` file.
 
 ### Command Syntax
 
 ```bash
-# Using dotnet run
+# General syntax
+dotnet run -- <COMMAND> [OPTIONS]
+
+# Example for 'organize'
 dotnet run -- organize <TARGET_DIRECTORY> [OPTIONS]
 
-# Using the published executable
-FileOrganizerNET.exe organize <TARGET_DIRECTORY> [OPTIONS]
+# Example for 'init'
+dotnet run -- init [OPTIONS]
+
+# Example for 'validate'
+dotnet run -- validate [OPTIONS]
 ```
 
-### Arguments
-
--   `<TARGET_DIRECTORY>` (Required): The full path to the directory you want to organize.
-
-### Options
+### `organize` Command Arguments & Options
 
 | Option              | Alias | Description                                                    | Default       |
 | ------------------- | ----- | -------------------------------------------------------------- | ------------- |
-| `--config <PATH>`   | `-c`  | The path to a custom configuration file.                       | `config.json` |
+| `<TARGET_DIRECTORY>`|       | **(Required)** The full path to the directory to organize.     |               |
+| `--config <PATH>`   | `-c`  | Path to a custom JSON config file.                             | `config.json` |
 | `--recursive`       | `-r`  | Process files in all subdirectories recursively.               | `false`       |
 | `--dry-run`         |       | Simulate the organization and print actions without moving files.| `false`       |
 | `--log-file <PATH>` | `-l`  | Path to a file to write log output in addition to the console. | `null`        |
 
+### `init` Command Arguments & Options
+
+| Option        | Alias | Description                                                         | Default       |
+| ------------- | ----- | ------------------------------------------------------------------- | ------------- |
+| `<OUTPUT_PATH>`|       | The path where the default `config.json` file will be created.    | `config.json` |
+| `--force`     | `-f`  | Overwrite the existing file without a prompt if it already exists.  | `false`       |
+
+### `validate` Command Arguments & Options
+
+| Option        | Alias | Description                                                           | Default       |
+| ------------- | ----- | --------------------------------------------------------------------- | ------------- |
+| `<CONFIG_PATH>`|       | The path to the `config.json` file to validate.                       | `config.json` |
+
+
 ### Examples
 
-**1. Safely preview an organization of your Downloads folder:**
+**1. Generate a default config file:**
+
+```bash
+dotnet run -- init
+```
+
+**2. Generate and force overwrite a config file in a specific location:**
+
+```bash
+dotnet run -- init "C:\MyConfigs\my-custom-config.json" --force
+```
+
+**3. Validate an existing configuration file:**
+
+```bash
+dotnet run -- validate "C:\Users\YourUser\Downloads\config.json"
+```
+
+**4. Safely preview an organization of your Downloads folder:**
 
 ```bash
 dotnet run -- organize "C:\Users\YourUser\Downloads" --dry-run
 ```
 
-**2. Recursively organize a project folder and log the output to a file:**
+**5. Recursively organize a project folder and log the output to a file:**
 
 ```bash
 dotnet run -- organize "D:\Projects" --recursive --log-file "D:\logs\organizer.log"
 ```
-
 ## Configuration
 
 The behavior of the organizer is controlled by a JSON file (`config.json`). The configuration is based on an ordered list of rules, where the **first rule that a file matches is the one that gets applied**.
