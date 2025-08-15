@@ -41,7 +41,8 @@ public class FileOrganizer(IFileLogger logger)
         {
             // First, skip any files that should not be processed.
             // 1. Do not process the configuration file itself.
-            if (file.Name.Equals("config.json", StringComparison.OrdinalIgnoreCase)) continue;
+            if (file.Name.Equals(ConfigLoader.DefaultConfigName,
+                    StringComparison.OrdinalIgnoreCase)) continue;
 
             // 2. In recursive mode, do not re-process files already in a managed folder.
             // This prevents the tool from infinitely processing its own output on subsequent runs.
