@@ -1,22 +1,41 @@
-﻿namespace FileOrganizerNET;
+﻿using System.Text.Json.Serialization;
 
-/// <summary>
-///     Defines the configuration for the file organizer.
-/// </summary>
+namespace FileOrganizerNET;
+
 public class OrganizerConfig
 {
     /// <summary>
-    ///     Maps file extensions (e.g., ".jpg") to a category folder name (e.g., "Photos").
+    ///     An ordered list of rules to be applied to files.
+    ///     The first rule that a file matches will be used.
     /// </summary>
-    public Dictionary<string, string> ExtensionMappings { get; set; } = new();
+    public List<Rule> Rules { get; init; } = [];
 
-    /// <summary>
-    ///     The name of the folder for files that don't match any mapping.
-    /// </summary>
-    public string OthersFolderName { get; set; } = "Others";
+    public string OthersFolderName { get; init; } = "Others";
+    public string SubfoldersFolderName { get; init; } = "Folders";
+}
 
-    /// <summary>
-    ///     The name of the folder to move other subdirectories into.
-    /// </summary>
-    public string SubfoldersFolderName { get; set; } = "Folders";
+public class Rule
+{
+    public RuleAction Action { get; init; } = RuleAction.Move;
+    public string DestinationFolder { get; init; } = string.Empty;
+    public RuleConditions Conditions { get; init; } = new();
+}
+
+public class RuleConditions
+{
+    [JsonPropertyName("extensions")] public List<string>? Extensions { get; init; }
+
+    [JsonPropertyName("fileNameContains")] public List<string>? FileNameContains { get; init; }
+
+    [JsonPropertyName("olderThanDays")] public int? OlderThanDays { get; init; }
+
+    [JsonPropertyName("minSizeMB")] public long? MinSizeMb { get; init; }
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum RuleAction
+{
+    Move,
+    Copy,
+    Delete
 }

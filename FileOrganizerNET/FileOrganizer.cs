@@ -23,6 +23,14 @@ public class FileOrganizer(IFileLogger logger)
         ProcessFolders(targetDir, config, managedFolders, isDryRun);
     }
 
+    /// <summary>
+    ///     Iterates through files in the target directory and applies the first matching rule.
+    /// </summary>
+    /// <param name="targetDir">The root directory to process.</param>
+    /// <param name="config">The loaded organizer configuration.</param>
+    /// <param name="managedFolders">A set of all possible destination folder names for quick lookups.</param>
+    /// <param name="isRecursive">If true, processes files in all subdirectories.</param>
+    /// <param name="isDryRun">If true, logs intended actions without modifying the filesystem.</param>
     private void ProcessFiles(DirectoryInfo targetDir, OrganizerConfig config,
         HashSet<string> managedFolders, bool isRecursive, bool isDryRun)
     {
@@ -31,41 +39,106 @@ public class FileOrganizer(IFileLogger logger)
 
         foreach (var file in targetDir.GetFiles("*", searchOption))
         {
-            // Skip the config file itself.
+            // First, skip any files that should not be processed.
+            // 1. Do not process the configuration file itself.
             if (file.Name.Equals("config.json", StringComparison.OrdinalIgnoreCase)) continue;
 
-            // **CRITICAL**: In recursive mode, skip files already in a managed folder.
-            if (isRecursive && managedFolders.Contains(
-                    file.DirectoryName?.Split(Path.DirectorySeparatorChar).Last() ?? string.Empty))
-                continue;
-
-            var extension = file.Extension.ToLowerInvariant();
-            var destFolderName =
-                config.ExtensionMappings.GetValueOrDefault(extension, config.OthersFolderName);
-            var destFolderPath = Path.Combine(targetDir.FullName, destFolderName);
-            var uniqueDestFilePath = Path.Combine(destFolderPath, file.Name);
-
-            if (isDryRun)
+            // 2. In recursive mode, do not re-process files already in a managed folder.
+            // This prevents the tool from infinitely processing its own output on subsequent runs.
+            if (isRecursive)
             {
-                logger.Log(
-                    $"[DRY RUN] Would move file: \"{file.FullName}\" -> \"{destFolderPath}\"");
-                continue; // Skip to the next file
+                var parentFolderName = file.Directory?.Name ?? string.Empty;
+                if (managedFolders.Contains(parentFolderName)) continue;
             }
 
+            // Find the first rule in the configuration that the file matches.
+            Rule? matchedRule = null;
+            foreach (var rule in config.Rules)
+                if (DoesFileMatchRule(file, rule.Conditions))
+                {
+                    matchedRule = rule;
+                    break; // The first matching rule wins.
+                }
+
+            // If this is a dry run, log the intended action and move to the next file.
+            if (isDryRun)
+            {
+                if (matchedRule != null)
+                {
+                    var actionVerb = matchedRule.Action.ToString().ToUpper();
+                    var destinationInfo = matchedRule.Action == RuleAction.Delete
+                        ? ""
+                        : $" -> \"{Path.Combine(targetDir.FullName, matchedRule.DestinationFolder)}\"";
+
+                    logger.Log(
+                        $"[DRY RUN] Would {actionVerb} file: \"{file.FullName}\"{destinationInfo}");
+                }
+                else
+                {
+                    // Log the default action for unmatched files in a dry run.
+                    logger.Log(
+                        $"[DRY RUN] Would MOVE file: \"{file.FullName}\" -> \"{Path.Combine(targetDir.FullName, config.OthersFolderName)}\"");
+                }
+
+                continue;
+            }
+
+            // If not a dry run, execute the appropriate action.
             try
             {
-                Directory.CreateDirectory(destFolderPath);
-                uniqueDestFilePath =
-                    GetUniqueFilePath(
-                        uniqueDestFilePath); // Check for collisions only on actual move
-                logger.Log($"Moving file: \"{file.Name}\" -> \"{destFolderName}\"");
-                file.MoveTo(uniqueDestFilePath);
+                if (matchedRule != null)
+                    // A rule was matched, so perform the specified action.
+                    switch (matchedRule.Action)
+                    {
+                        case RuleAction.Move:
+                            MoveFile(file,
+                                Path.Combine(targetDir.FullName, matchedRule.DestinationFolder));
+                            break;
+                        case RuleAction.Copy:
+                            CopyFile(file,
+                                Path.Combine(targetDir.FullName, matchedRule.DestinationFolder));
+                            break;
+                        case RuleAction.Delete:
+                            DeleteFile(file);
+                            break;
+                    }
+                else
+                    // No rule was matched, so perform the default action: move to "Others".
+                    MoveFile(file, Path.Combine(targetDir.FullName, config.OthersFolderName));
             }
             catch (Exception ex)
             {
-                logger.Log($"WARNING: Could not move \"{file.Name}\". Reason: {ex.Message}");
+                // Catch potential IO errors (e.g., file in use, permissions denied).
+                var action = matchedRule?.Action.ToString() ?? "Move";
+                logger.Log(
+                    $"WARNING: Could not perform action '{action}' on \"{file.Name}\". Reason: {ex.Message}");
             }
         }
+    }
+
+    private static bool DoesFileMatchRule(FileInfo file, RuleConditions conditions)
+    {
+        if (conditions.Extensions?.Count > 0)
+            if (!conditions.Extensions.Contains(file.Extension, StringComparer.OrdinalIgnoreCase))
+                return false;
+
+        if (conditions.FileNameContains?.Count > 0)
+            if (!conditions.FileNameContains.Any(keyword =>
+                    file.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+        if (conditions.OlderThanDays.HasValue)
+            if (file.LastWriteTimeUtc > DateTime.UtcNow.AddDays(-conditions.OlderThanDays.Value))
+                return false;
+
+        if (conditions.MinSizeMb.HasValue)
+        {
+            var minSizeBytes = conditions.MinSizeMb.Value * 1024 * 1024;
+            if (file.Length < minSizeBytes)
+                return false;
+        }
+
+        return true;
     }
 
     private void ProcessFolders(DirectoryInfo targetDir, OrganizerConfig config,
@@ -101,7 +174,7 @@ public class FileOrganizer(IFileLogger logger)
         }
     }
 
-    private string GetUniqueFilePath(string intendedPath)
+    private static string GetUniqueFilePath(string intendedPath)
     {
         if (!File.Exists(intendedPath)) return intendedPath;
 
@@ -120,15 +193,39 @@ public class FileOrganizer(IFileLogger logger)
         return newPath;
     }
 
-    private HashSet<string> GetManagedFolderNames(OrganizerConfig config)
+    private static HashSet<string> GetManagedFolderNames(OrganizerConfig config)
     {
         var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             config.OthersFolderName,
             config.SubfoldersFolderName
         };
-        foreach (var folderName in config.ExtensionMappings.Values) folders.Add(folderName);
+        foreach (var folderName in config.Rules.Select(r => r.DestinationFolder).Distinct())
+            folders.Add(folderName);
 
         return folders;
+    }
+
+
+    private void MoveFile(FileInfo file, string destFolderPath)
+    {
+        Directory.CreateDirectory(destFolderPath);
+        var uniqueDestFilePath = GetUniqueFilePath(Path.Combine(destFolderPath, file.Name));
+        logger.Log($"Moving file: \"{file.Name}\" -> \"{Path.GetFileName(destFolderPath)}\"");
+        file.MoveTo(uniqueDestFilePath);
+    }
+
+    private void CopyFile(FileInfo file, string destFolderPath)
+    {
+        Directory.CreateDirectory(destFolderPath);
+        var uniqueDestFilePath = GetUniqueFilePath(Path.Combine(destFolderPath, file.Name));
+        logger.Log($"Copying file: \"{file.Name}\" -> \"{Path.GetFileName(destFolderPath)}\"");
+        file.CopyTo(uniqueDestFilePath);
+    }
+
+    private void DeleteFile(FileInfo file)
+    {
+        logger.Log($"Deleting file: \"{file.Name}\"");
+        file.Delete();
     }
 }

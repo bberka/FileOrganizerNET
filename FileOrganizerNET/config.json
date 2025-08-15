@@ -1,100 +1,182 @@
 ﻿{
-  "ExtensionMappings": {
-    ".jpg": "Photos",
-    ".jpeg": "Photos",
-    ".png": "Photos",
-    ".gif": "Photos",
-    ".bmp": "Photos",
-    ".webp": "Photos",
-    ".heic": "Photos",
-    ".svg": "Photos",
-    ".ai": "Photos",
-    ".eps": "Photos",
-    ".psd": "Photos",
-    ".tiff": "Photos",
-    ".cr2": "Photos",
-    ".nef": "Photos",
-    ".orf": "Photos",
-    ".sr2": "Photos",
-    ".zip": "Archives",
-    ".rar": "Archives",
-    ".7z": "Archives",
-    ".tar": "Archives",
-    ".gz": "Archives",
-    ".bz2": "Archives",
-    ".iso": "Archives",
-    ".img": "Archives",
-    ".dmg": "Archives",
-    ".pdf": "Documents",
-    ".docx": "Documents",
-    ".doc": "Documents",
-    ".xlsx": "Documents",
-    ".xls": "Documents",
-    ".pptx": "Documents",
-    ".ppt": "Documents",
-    ".txt": "Documents",
-    ".rtf": "Documents",
-    ".odt": "Documents",
-    ".ods": "Documents",
-    ".md": "Documents",
-    ".csv": "Documents",
-    ".epub": "Documents",
-    ".mobi": "Documents",
-    ".exe": "Executables",
-    ".msi": "Executables",
-    ".jar": "Executables",
-    ".bat": "Scripts",
-    ".cmd": "Scripts",
-    ".ps1": "Scripts",
-    ".sh": "Scripts",
-    ".mp4": "Videos",
-    ".mov": "Videos",
-    ".avi": "Videos",
-    ".mkv": "Videos",
-    ".webm": "Videos",
-    ".wmv": "Videos",
-    ".flv": "Videos",
-    ".mp3": "Audio",
-    ".wav": "Audio",
-    ".flac": "Audio",
-    ".aac": "Audio",
-    ".ogg": "Audio",
-    ".m4a": "Audio",
-    ".html": "Source Code",
-    ".css": "Source Code",
-    ".js": "Source Code",
-    ".ts": "Source Code",
-    ".jsx": "Source Code",
-    ".tsx": "Source Code",
-    ".php": "Source Code",
-    ".scss": "Source Code",
-    ".less": "Source Code",
-    ".vue": "Source Code",
-    ".c": "Source Code",
-    ".h": "Source Code",
-    ".cpp": "Source Code",
-    ".hpp": "Source Code",
-    ".cs": "Source Code",
-    ".csproj": "Source Code",
-    ".sln": "Source Code",
-    ".vb": "Source Code",
-    ".java": "Source Code",
-    ".kt": "Source Code",
-    ".swift": "Source Code",
-    ".py": "Source Code",
-    ".go": "Source Code",
-    ".rs": "Source Code",
-    ".rb": "Source Code",
-    ".pl": "Source Code",
-    ".sql": "Source Code",
-    ".json": "Source Code",
-    ".xml": "Source Code",
-    ".yml": "Source Code",
-    ".yaml": "Source Code",
-    ".toml": "Source Code",
-    ".dockerfile": "Source Code",
-    ".gitignore": "Source Code"
-  },
+  "Rules": [
+    {
+      "DestinationFolder": "Archive/Old Files",
+      "Conditions": {
+        "olderThanDays": 365
+      }
+    },
+    {
+      "DestinationFolder": "Large Files",
+      "Conditions": {
+        "minSizeMB": 5120
+      }
+    },
+    {
+      "DestinationFolder": "Invoices",
+      "Conditions": {
+        "fileNameContains": [
+          "invoice",
+          "receipt"
+        ],
+        "extensions": [
+          ".pdf",
+          ".docx",
+          ".xlsx"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Photos",
+      "Conditions": {
+        "extensions": [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".gif",
+          ".bmp",
+          ".webp",
+          ".heic",
+          ".svg",
+          ".ai",
+          ".eps",
+          ".psd",
+          ".tiff",
+          ".cr2",
+          ".nef",
+          ".orf",
+          ".sr2"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Archives",
+      "Conditions": {
+        "extensions": [
+          ".zip",
+          ".rar",
+          ".7z",
+          ".tar",
+          ".gz",
+          ".bz2",
+          ".iso",
+          ".img",
+          ".dmg"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Documents",
+      "Conditions": {
+        "extensions": [
+          ".pdf",
+          ".docx",
+          ".doc",
+          ".xlsx",
+          ".xls",
+          ".pptx",
+          ".ppt",
+          ".txt",
+          ".rtf",
+          ".odt",
+          ".ods",
+          ".md",
+          ".csv",
+          ".epub",
+          ".mobi"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Executables",
+      "Conditions": {
+        "extensions": [
+          ".exe",
+          ".msi",
+          ".jar"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Scripts",
+      "Conditions": {
+        "extensions": [
+          ".bat",
+          ".cmd",
+          ".ps1",
+          ".sh"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Videos",
+      "Conditions": {
+        "extensions": [
+          ".mp4",
+          ".mov",
+          ".avi",
+          ".mkv",
+          ".webm",
+          ".wmv",
+          ".flv"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Audio",
+      "Conditions": {
+        "extensions": [
+          ".mp3",
+          ".wav",
+          ".flac",
+          ".aac",
+          ".ogg",
+          ".m4a"
+        ]
+      }
+    },
+    {
+      "DestinationFolder": "Source Code",
+      "Conditions": {
+        "extensions": [
+          ".html",
+          ".css",
+          ".js",
+          ".ts",
+          ".jsx",
+          ".tsx",
+          ".php",
+          ".scss",
+          ".less",
+          ".vue",
+          ".c",
+          ".h",
+          ".cpp",
+          ".hpp",
+          ".cs",
+          ".csproj",
+          ".sln",
+          ".vb",
+          ".java",
+          ".kt",
+          ".swift",
+          ".py",
+          ".go",
+          ".rs",
+          ".rb",
+          ".pl",
+          ".sql",
+          ".json",
+          ".xml",
+          ".yml",
+          ".yaml",
+          ".toml",
+          ".dockerfile",
+          ".gitignore"
+        ]
+      }
+    }
+  ],
   "OthersFolderName": "Others",
   "SubfoldersFolderName": "Folders"
 }

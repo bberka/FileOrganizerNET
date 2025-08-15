@@ -75,22 +75,34 @@ dotnet run -- organize "D:\Projects" --recursive --log-file "D:\logs\organizer.l
 
 ## Configuration
 
-The behavior of the organizer is controlled by a JSON file, by default named `config.json`.
+The behavior of the organizer is controlled by a JSON file (`config.json`). The configuration is based on an ordered list of rules, where the **first rule that a file matches is the one that gets applied**.
 
 ### `config.json` Structure
 
 ```json
 {
-  "ExtensionMappings": {
-    ".pdf": "Documents",
-    ".docx": "Documents",
-    ".jpg": "Photos",
-    ".zip": "Archives",
-    ".mp4": "Videos",
-    ".cs": "Source Code",
-    ".py": "Source Code",
-    ".bat": "Scripts"
-  },
+  "Rules": [
+    {
+      "Action": "Delete",
+      "Conditions": {
+        "extensions": [".tmp", ".log"]
+      }
+    },
+    {
+      "Action": "Copy",
+      "DestinationFolder": "Invoices/Backup",
+      "Conditions": {
+        "fileNameContains": ["invoice", "receipt"]
+      }
+    },
+    {
+      "Action": "Move",
+      "DestinationFolder": "Photos",
+      "Conditions": {
+        "extensions": [".jpg", ".png"]
+      }
+    }
+  ],
   "OthersFolderName": "Others",
   "SubfoldersFolderName": "Folders"
 }
@@ -98,9 +110,31 @@ The behavior of the organizer is controlled by a JSON file, by default named `co
 
 ### Configuration Sections
 
--   **`ExtensionMappings`**: Maps a file extension (key) to a destination folder name (value). The key must be a lowercase string starting with a dot (`.`).
--   **`OthersFolderName`**: The destination for any file whose extension is not found in `ExtensionMappings`.
+-   **`Rules`**: An array of rule objects, processed from top to bottom.
+    -   `Action`: (Optional) The action to perform. Can be `Move`, `Copy`, or `Delete`. **Defaults to `Move` if not specified.**
+    -   `DestinationFolder`: The name of the folder for `Move` or `Copy` actions. This is ignored for `Delete`.
+    -   `Conditions`: An object specifying all conditions that a file must meet for the rule to apply.
+
+-   **`OthersFolderName`**: The destination for any file that does not match any rules. These files are always moved.
+
 -   **`SubfoldersFolderName`**: The destination for any subdirectory that is not a category folder itself.
+
+### Available Actions
+
+| Action   | Description                                                              |
+| -------- | ------------------------------------------------------------------------ |
+| `Move`   | Moves the file to the `DestinationFolder`. This is the default action.   |
+| `Copy`   | Copies the file to the `DestinationFolder`, leaving the original intact. |
+| `Delete` | Permanently deletes the file. Use with caution.                          |
+
+### Available Conditions
+
+| Property           | Type             | Description                                                              |
+| ------------------ | ---------------- | ------------------------------------------------------------------------ |
+| `extensions`       | Array of strings | Matches if the file's extension is in the list (case-insensitive).       |
+| `fileNameContains` | Array of strings | Matches if the file's name contains any of the keywords in the list.     |
+| `olderThanDays`    | Number           | Matches if the file's last modified date is older than this many days.   |
+| `minSizeMB`        | Number           | Matches if the file's size is greater than or equal to this many megabytes. |
 
 ## How It Works
 
