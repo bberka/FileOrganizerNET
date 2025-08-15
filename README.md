@@ -12,7 +12,7 @@ A simple yet powerful command-line tool built with .NET and Cocona to automatica
 
 ## Prerequisites
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later.
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) or later.
 
 ## Installation & Setup
 
