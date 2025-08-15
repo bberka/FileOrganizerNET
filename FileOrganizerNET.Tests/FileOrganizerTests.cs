@@ -185,4 +185,65 @@ public class FileOrganizerTests
                 Is.False);
         });
     }
+
+
+    [Test]
+    public void Organize_HandlesUpperCaseExtensionCorrectly()
+    {
+        CreateTestFile("vacation.JPG");
+
+        _organizer.Organize(_testDirectory, _config, false, false);
+
+        Assert.That(File.Exists(Path.Combine(_testDirectory, "Photos", "vacation.JPG")), Is.True);
+    }
+
+    [Test]
+    public void Organize_MovesFileWithNoExtensionToOthers()
+    {
+        CreateTestFile("LICENSE");
+
+        _organizer.Organize(_testDirectory, _config, false, false);
+
+        Assert.That(File.Exists(Path.Combine(_testDirectory, "Others", "LICENSE")), Is.True);
+    }
+
+    [Test]
+    public void Organize_IgnoresTheConfigFile()
+    {
+        CreateTestFile("config.json");
+
+        _organizer.Organize(_testDirectory, _config, false, false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(Path.Combine(_testDirectory, "config.json")), Is.True);
+            Assert.That(File.Exists(Path.Combine(_testDirectory, "Others", "config.json")),
+                Is.False);
+        });
+    }
+
+    [Test]
+    public void Organize_LogsErrorAndReturns_WhenTargetDirectoryNotFound()
+    {
+        var nonExistentDirectory = Path.Combine(_testDirectory, "non-existent-dir");
+
+        _organizer.Organize(nonExistentDirectory, _config, false, false);
+
+        Assert.That(_logOutput, Has.Some.Contain("ERROR: Target directory not found"));
+        Assert.That(_logOutput, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void Organize_HandlesMultipleFileNameCollisions()
+    {
+        Directory.CreateDirectory(Path.Combine(_testDirectory, "Documents"));
+        File.Create(Path.Combine(_testDirectory, "Documents", "report.pdf")).Close();
+        File.Create(Path.Combine(_testDirectory, "Documents", "report (1).pdf")).Close();
+        CreateTestFile("report.pdf"); // The new file to be moved.
+
+        _organizer.Organize(_testDirectory, _config, false, false);
+
+        Assert.That(File.Exists(Path.Combine(_testDirectory, "Documents", "report (2).pdf")),
+            Is.True);
+    }
 }
