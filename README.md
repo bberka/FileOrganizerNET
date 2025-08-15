@@ -37,39 +37,38 @@ The tool is run from the command line, pointing it to the directory you want to 
 ### Command Syntax
 
 ```bash
+# Using dotnet run
 dotnet run -- organize <TARGET_DIRECTORY> [OPTIONS]
+
+# Using the published executable
+FileOrganizerNET.exe organize <TARGET_DIRECTORY> [OPTIONS]
 ```
 
 ### Arguments
 
-- `<TARGET_DIRECTORY>` (Required): The full path to the directory you want to organize.
+-   `<TARGET_DIRECTORY>` (Required): The full path to the directory you want to organize.
 
 ### Options
 
-- `-c, --config <PATH>` (Optional): The path to a custom configuration file. If not provided, it defaults to `config.json` located in the same directory as the executable.
+| Option                | Alias | Description                                                      | Default       |
+| --------------------- | ----- | ---------------------------------------------------------------- | ------------- |
+| `--config <PATH>`     | `-c`  | The path to a custom configuration file.                         | `config.json` |
+| `--recursive`         | `-r`  | Process files in all subdirectories recursively.                 | `false`       |
+| `--dry-run`           |       | Simulate the organization and print actions without moving files.| `false`       |
+| `--log-file <PATH>`   | `-l`  | Path to a file to write log output in addition to the console.   | `null`        |
 
 ### Examples
 
-**1. Organize your Downloads folder using the default `config.json`:**
+**1. Safely preview an organization of your Downloads folder:**
 
 ```bash
-# On Windows
-dotnet run -- organize "C:\Users\YourUser\Downloads"
-
-# On macOS / Linux
-dotnet run -- organize "/Users/youruser/Downloads"
+dotnet run -- organize "C:\Users\YourUser\Downloads" --dry-run
 ```
 
-**2. Organize a different folder using a custom configuration file:**
+**2. Recursively organize a project folder and log the output to a file:**
 
 ```bash
-dotnet run -- organize "D:\Unsorted\Projects" --config "C:\my-configs\project-rules.json"
-```
-
-**3. Get help and see all commands/options:**
-
-```bash
-dotnet run -- --help
+dotnet run -- organize "D:\Projects" --recursive --log-file "D:\logs\organizer.log"
 ```
 
 ## Configuration
