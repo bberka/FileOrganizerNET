@@ -82,8 +82,6 @@ public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActio
 
         foreach (var file in targetDir.GetFiles("*", searchOption))
         {
-            filesScanned++;
-
             if (file.Name.Equals(ConfigFileName, StringComparison.OrdinalIgnoreCase)) continue;
 
             if (isRecursive)
@@ -91,6 +89,8 @@ public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActio
                 var parentFolderName = file.Directory?.Name ?? string.Empty;
                 if (managedFolders.Contains(parentFolderName)) continue;
             }
+
+            filesScanned++;
 
             var matchedRule = config.Rules.FirstOrDefault(rule => RuleMatcher.DoesFileMatchRule(file, rule.Conditions));
 
@@ -102,7 +102,6 @@ public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActio
                 string? destinationPath = null;
                 if (matchedRule?.Action != RuleAction.Delete)
                     destinationPath = Path.Combine(targetDir.FullName, matchedRule?.DestinationFolder ?? config.OthersFolderName);
-
                 var destinationInfo = destinationPath is null ? "" : $" -> \"{destinationPath}\"";
                 var message = $"[DRY RUN] Would {actionVerb} file: \"{file.FullName}\"{destinationInfo}";
 
