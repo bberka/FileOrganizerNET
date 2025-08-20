@@ -28,45 +28,37 @@ public abstract class FileOrganizerTestsBase
         MockLogger.Setup(l => l.Log(It.IsAny<string>()))
             .Callback<string>(s => LogOutput.Add(s));
 
-        MockFileSystemActions = new Mock<IFileSystemActions>(MockLogger.Object);
+        MockFileSystemActions = new Mock<IFileSystemActions>();
 
-        // Default behavior for GetUniqueFilePath: just return the path (no collision)
         MockFileSystemActions.Setup(fsa => fsa.GetUniqueFilePath(It.IsAny<string>()))
             .Returns((string path) => path);
 
-        // --- CRITICAL CORRECTION TO MoveFile MOCK ---
-        // The MoveFile mock needs to call GetUniqueFilePath from the MockFileSystemActions
-        // itself to simulate realistic collision handling.
         MockFileSystemActions.Setup(fsa => fsa.MoveFile(It.IsAny<FileInfo>(), It.IsAny<string>()))
             .Returns((FileInfo file, string destPath) =>
             {
-                var originalFullName = file.FullName; // Capture original path
+                var originalFullName = file.FullName;
 
-                // Call the MOCKED GetUniqueFilePath from the Mocked object
-                // This ensures that if GetUniqueFilePath is overridden in a test,
-                // this mock uses that overridden behavior.
                 var uniqueDestFilePath = MockFileSystemActions.Object.GetUniqueFilePath(Path.Combine(destPath, file.Name));
 
                 if (!Directory.Exists(destPath)) Directory.CreateDirectory(destPath);
-                file.MoveTo(uniqueDestFilePath, true); // Use the unique path for actual file move
+                file.MoveTo(uniqueDestFilePath, true);
 
                 return new ProcessedFileAction
                 {
                     OriginalFilePath = originalFullName,
                     Action = RuleAction.Move,
-                    DestinationPath = uniqueDestFilePath, // Report the unique path
+                    DestinationPath = uniqueDestFilePath,
                     IsSuccess = true,
                     ResultMessage = $"Simulated move from {originalFullName} to {uniqueDestFilePath}"
                 };
             });
 
-        // Similar correction needed for CopyFile mock if it also calls GetUniqueFilePath internally
         MockFileSystemActions.Setup(fsa => fsa.CopyFile(It.IsAny<FileInfo>(), It.IsAny<string>()))
             .Returns((FileInfo file, string destPath) =>
             {
                 var originalFullName = file.FullName;
                 var uniqueDestFilePath =
-                    MockFileSystemActions.Object.GetUniqueFilePath(Path.Combine(destPath, file.Name)); // Call mocked GetUniqueFilePath
+                    MockFileSystemActions.Object.GetUniqueFilePath(Path.Combine(destPath, file.Name));
                 if (!Directory.Exists(destPath)) Directory.CreateDirectory(destPath);
                 File.Copy(file.FullName, uniqueDestFilePath, true);
                 return new ProcessedFileAction
@@ -93,7 +85,6 @@ public abstract class FileOrganizerTestsBase
                 };
             });
 
-        // The GetXxHash128 mock doesn't need to change as it doesn't call other mocked methods internally for its result.
         MockFileSystemActions.Setup(fsa => fsa.GetXxHash128(It.IsAny<string>()))
             .Returns((string filePath) =>
             {
