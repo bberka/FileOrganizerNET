@@ -282,7 +282,7 @@ public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActio
     ///     from the config into a HashSet for efficient lookups.
     ///     Handles nested folder paths by extracting only the top-level folder name.
     /// </summary>
-    private HashSet<string> GetManagedFolderNames(OrganizerConfig config)
+    private static HashSet<string> GetManagedFolderNames(OrganizerConfig config)
     {
         var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
