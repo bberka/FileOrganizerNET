@@ -13,7 +13,7 @@ public class FileSystemActions(IFileLogger logger)
     /// <param name="file">The FileInfo object of the file to move.</param>
     /// <param name="destFolderPath">The path to the destination folder.</param>
     /// <returns>A ProcessedFileAction detailing the outcome.</returns>
-    public ProcessedFileAction MoveFile(FileInfo file, string destFolderPath)
+    public virtual ProcessedFileAction MoveFile(FileInfo file, string destFolderPath)
     {
         try
         {
@@ -50,7 +50,7 @@ public class FileSystemActions(IFileLogger logger)
     /// <param name="file">The FileInfo object of the file to copy.</param>
     /// <param name="destFolderPath">The path to the destination folder.</param>
     /// <returns>A ProcessedFileAction detailing the outcome.</returns>
-    public ProcessedFileAction CopyFile(FileInfo file, string destFolderPath)
+    public virtual ProcessedFileAction CopyFile(FileInfo file, string destFolderPath)
     {
         try
         {
@@ -86,7 +86,7 @@ public class FileSystemActions(IFileLogger logger)
     /// </summary>
     /// <param name="file">The FileInfo object of the file to delete.</param>
     /// <returns>A ProcessedFileAction detailing the outcome.</returns>
-    public ProcessedFileAction DeleteFile(FileInfo file)
+    public virtual ProcessedFileAction DeleteFile(FileInfo file)
     {
         try
         {
@@ -116,7 +116,7 @@ public class FileSystemActions(IFileLogger logger)
     /// <summary>
     ///     Finds a unique file path by appending (1), (2), etc., if a file already exists.
     /// </summary>
-    private string GetUniqueFilePath(string intendedPath)
+    public virtual string GetUniqueFilePath(string intendedPath)
     {
         if (!File.Exists(intendedPath)) return intendedPath;
 
@@ -140,7 +140,7 @@ public class FileSystemActions(IFileLogger logger)
     /// </summary>
     /// <param name="filePath">The full path to the file.</param>
     /// <returns>The hexadecimal string representation of the hash, or null if an error occurs.</returns>
-    public string? GetXxHash128(string filePath)
+    public virtual string? GetXxHash128(string filePath)
     {
         try
         {
