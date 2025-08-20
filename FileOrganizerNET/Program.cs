@@ -1,15 +1,19 @@
 ﻿using System.Diagnostics;
 using Cocona;
-using FileOrganizerNET;
+using FileOrganizerNET.Concrete;
+using FileOrganizerNET.Contracts;
+using FileOrganizerNET.Utils;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = CoconaApp.CreateBuilder();
 
-builder.Services.AddSingleton<FileOrganizer>();
+builder.Services.AddSingleton<IFileLogger, FileLogger>();
+builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
+builder.Services.AddSingleton<FileSystemActions>();
+builder.Services.AddSingleton<IFileOrganizer, FileOrganizer>();
 var app = builder.Build();
 
 var asmVersion = typeof(Program).Assembly.GetName().Version;
-Console.WriteLine($"FileOrganizerNET v{asmVersion}");
 
 app.AddCommand("organize", (
         [Argument(Description = "The target directory to organize.")]
@@ -20,20 +24,29 @@ app.AddCommand("organize", (
         bool recursive = false,
         [Option(Description = "Simulate the organization without moving any files.")]
         bool dryRun = false,
-        [Option('l', Description = "Path to a file to write log output.")]
-        string? logFile = null
+        [Option(Description = "Checks and removes duplicate files with XxHash.")]
+        bool checkDuplicates = false
     ) =>
     {
-        var config = ConfigLoader.LoadConfiguration(configFile);
+        var logger = app.Services.GetRequiredService<IFileLogger>();
+        logger.Log($"FileOrganizerNET v{asmVersion?.ToString(3)}");
+
+        var configLoader = app.Services.GetRequiredService<IConfigLoader>();
+        var config = configLoader.LoadConfiguration(configFile);
         if (config is null) return 1;
 
-        var logger = new FileLogger(logFile);
-        var organizer = new FileOrganizer(logger);
+        var organizer = app.Services.GetRequiredService<IFileOrganizer>();
 
         logger.Log($"--- Starting organization for: {targetDirectory} ---\n");
+        logger.Log("Args:");
+        logger.Log($"  Target Directory: {targetDirectory}");
+        logger.Log($"  Config File: {configFile}");
+        logger.Log($"  Recursive: {recursive}");
+        logger.Log($"  Dry Run: {dryRun}");
+        logger.Log($"  Check Duplicates: {checkDuplicates}");
         var stopwatch = Stopwatch.StartNew();
 
-        organizer.Organize(targetDirectory, config, recursive, dryRun);
+        organizer.Organize(targetDirectory, config, recursive, dryRun, checkDuplicates);
 
         stopwatch.Stop();
         logger.Log($"\nOrganization complete. Time taken: {stopwatch.ElapsedMilliseconds}ms");
@@ -46,7 +59,13 @@ app.AddCommand("init", (
         string outputPath = ConfigLoader.DefaultConfigName,
         [Option('f', Description = "Force overwrite if the config file already exists.")]
         bool force = false
-    ) => ConfigLoader.GenerateDefaultConfiguration(outputPath, force) ? 0 : 1)
+    ) =>
+    {
+        var logger = app.Services.GetRequiredService<IFileLogger>();
+        logger.Log($"FileOrganizerNET v{asmVersion?.ToString(3)}");
+        var configLoader = app.Services.GetRequiredService<IConfigLoader>();
+        return configLoader.GenerateDefaultConfiguration(outputPath, force) ? 0 : 1;
+    })
     .WithDescription("Generates a default 'config.json' file.");
 
 app.AddCommand("validate", (
@@ -54,14 +73,17 @@ app.AddCommand("validate", (
         string configPath = ConfigLoader.DefaultConfigName
     ) =>
     {
-        var config = ConfigLoader.LoadConfiguration(configPath);
+        var logger = app.Services.GetRequiredService<IFileLogger>();
+        logger.Log($"FileOrganizerNET v{asmVersion?.ToString(3)}");
+        var configLoader = app.Services.GetRequiredService<IConfigLoader>();
+        var config = configLoader.LoadConfiguration(configPath);
         if (config != null)
         {
-            Console.WriteLine($"Configuration '{configPath}' is valid.");
+            logger.Log($"Configuration '{configPath}' is valid.");
             return 0;
         }
 
-        Console.WriteLine(
+        logger.Log(
             $"Configuration '{configPath}' is invalid. Please check error messages above.");
         return 1;
     })

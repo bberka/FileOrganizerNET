@@ -1,8 +1,10 @@
 ﻿using System.Text.Json;
+using FileOrganizerNET.Contracts;
+using FileOrganizerNET.Models.Config;
 
-namespace FileOrganizerNET;
+namespace FileOrganizerNET.Concrete;
 
-public static class ConfigLoader
+public class ConfigLoader(IFileLogger fileLogger) : IConfigLoader
 {
     public const string DefaultConfigName = "config.json";
 
@@ -12,7 +14,7 @@ public static class ConfigLoader
     /// </summary>
     /// <param name="configPath">The path to the configuration file.</param>
     /// <returns>The loaded OrganizerConfig or null if loading fails.</returns>
-    public static OrganizerConfig? LoadConfiguration(string configPath)
+    public OrganizerConfig? LoadConfiguration(string configPath)
     {
         var resolvedPath = Path.IsPathRooted(configPath)
             ? configPath
@@ -20,31 +22,31 @@ public static class ConfigLoader
 
         if (!File.Exists(resolvedPath))
         {
-            Console.WriteLine($"ERROR: Configuration file not found at: {resolvedPath}");
-            Console.WriteLine(
+            fileLogger.Log($"ERROR: Configuration file not found at: {resolvedPath}");
+            fileLogger.Log(
                 $"Please provide a valid path with --config or place '{DefaultConfigName}' next to the executable.");
             return null;
         }
 
         try
         {
-            Console.WriteLine($"--- Loading configuration from: {resolvedPath} ---");
+            fileLogger.Log($"--- Loading configuration from: {resolvedPath} ---");
             var config = JsonSerializer.Deserialize<OrganizerConfig>(
                 File.ReadAllText(resolvedPath),
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            Console.WriteLine(
+            fileLogger.Log(
                 $"Configuration loaded successfully from '{resolvedPath}'. Configuration is valid.");
             return config;
         }
         catch (JsonException ex)
         {
-            Console.WriteLine(
+            fileLogger.Log(
                 $"ERROR: Configuration file '{resolvedPath}' has invalid JSON format. Details: {ex.Message}");
             return null;
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
+            fileLogger.Log(
                 $"ERROR: Failed to load configuration from '{resolvedPath}'. Details: {ex.Message}");
             return null;
         }
@@ -56,7 +58,7 @@ public static class ConfigLoader
     /// <param name="outputPath">The path where the default config file should be created.</param>
     /// <param name="overwrite">If true, overwrite existing file without prompt.</param>
     /// <returns>True if the file was created or already existed, false on error or user cancellation.</returns>
-    public static bool GenerateDefaultConfiguration(string outputPath, bool overwrite)
+    public bool GenerateDefaultConfiguration(string outputPath, bool overwrite)
     {
         if (File.Exists(outputPath))
             if (!overwrite)
@@ -66,7 +68,7 @@ public static class ConfigLoader
                 var response = Console.ReadLine()?.Trim().ToLower();
                 if (response != "y")
                 {
-                    Console.WriteLine("Operation cancelled.");
+                    fileLogger.Log("Operation cancelled.");
                     return false;
                 }
             }
@@ -78,12 +80,12 @@ public static class ConfigLoader
             var jsonString = JsonSerializer.Serialize(defaultConfig, options);
 
             File.WriteAllText(outputPath, jsonString);
-            Console.WriteLine($"Default configuration file created at: {outputPath}");
+            fileLogger.Log($"Default configuration file created at: {outputPath}");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
+            fileLogger.Log(
                 $"ERROR: Failed to generate default configuration at '{outputPath}'. Details: {ex.Message}");
             return false;
         }
@@ -92,7 +94,7 @@ public static class ConfigLoader
     /// <summary>
     ///     Provides the default OrganizerConfig structure, including common rules.
     /// </summary>
-    private static OrganizerConfig GetDefaultConfig()
+    private OrganizerConfig GetDefaultConfig()
     {
         return new OrganizerConfig
         {
