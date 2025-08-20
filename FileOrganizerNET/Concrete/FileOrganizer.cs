@@ -38,11 +38,11 @@ public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActio
 
         logger.Log("\n--- Processing Files ---");
         var fileProcessingResult = ProcessFiles(targetDir, config, managedFolders, isRecursive, isDryRun);
-        if (fileProcessingResult.Errors.Any()) overallSuccess = false; // Set to false if errors exist
+        if (fileProcessingResult.Errors.Count != 0) overallSuccess = false; // Set to false if errors exist
 
         logger.Log("\n--- Processing Folders ---");
         var folderProcessingResult = ProcessFolders(targetDir, config, managedFolders, isDryRun);
-        if (folderProcessingResult.Errors.Any()) overallSuccess = false; // Set to false if errors exist
+        if (folderProcessingResult.Errors.Count != 0) overallSuccess = false; // Set to false if errors exist
 
 
         DuplicateCheckResult? duplicateCheckResult = null; // Initialize as nullable
@@ -50,7 +50,7 @@ public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActio
         {
             logger.Log("\n--- Checking for Duplicate Files ---");
             duplicateCheckResult = FindAndRemoveDuplicates(targetDir, managedFolders, isDryRun);
-            if (duplicateCheckResult.Errors.Any()) overallSuccess = false; // Set to false if errors exist
+            if (duplicateCheckResult.Errors.Count != 0) overallSuccess = false; // Set to false if errors exist
         }
 
         stopwatch.Stop();
