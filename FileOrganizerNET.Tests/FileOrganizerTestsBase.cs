@@ -4,7 +4,6 @@ using FileOrganizerNET.Concrete;
 using FileOrganizerNET.Contracts;
 using FileOrganizerNET.Models.Config;
 using FileOrganizerNET.Models.Result;
-using FileOrganizerNET.Utils;
 using Moq;
 
 namespace FileOrganizerNET.Tests;
@@ -13,7 +12,7 @@ public abstract class FileOrganizerTestsBase
 {
     protected OrganizerConfig DefaultConfig = null!;
     protected List<string> LogOutput = null!;
-    protected Mock<FileSystemActions> MockFileSystemActions = null!;
+    protected Mock<IFileSystemActions> MockFileSystemActions = null!;
     protected Mock<IFileLogger> MockLogger = null!;
     protected IFileOrganizer Organizer = null!;
     protected string TestDirectory = null!;
@@ -29,7 +28,7 @@ public abstract class FileOrganizerTestsBase
         MockLogger.Setup(l => l.Log(It.IsAny<string>()))
             .Callback<string>(s => LogOutput.Add(s));
 
-        MockFileSystemActions = new Mock<FileSystemActions>(MockLogger.Object);
+        MockFileSystemActions = new Mock<IFileSystemActions>(MockLogger.Object);
 
         // Default behavior for GetUniqueFilePath: just return the path (no collision)
         MockFileSystemActions.Setup(fsa => fsa.GetUniqueFilePath(It.IsAny<string>()))
