@@ -6,7 +6,7 @@ using FileOrganizerNET.Utils;
 
 namespace FileOrganizerNET.Concrete;
 
-public class FileOrganizer(IFileLogger logger, FileSystemActions fileSystemActions) : IFileOrganizer
+public class FileOrganizer(IFileLogger logger, IFileSystemActions fileSystemActions) : IFileOrganizer
 {
     private const string ConfigFileName = "config.json";
 

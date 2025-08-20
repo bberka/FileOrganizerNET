@@ -2,14 +2,13 @@
 using Cocona;
 using FileOrganizerNET.Concrete;
 using FileOrganizerNET.Contracts;
-using FileOrganizerNET.Utils;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = CoconaApp.CreateBuilder();
 
 builder.Services.AddSingleton<IFileLogger, FileLogger>();
 builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
-builder.Services.AddSingleton<FileSystemActions>();
+builder.Services.AddSingleton<IFileSystemActions, FileSystemActions>();
 builder.Services.AddSingleton<IFileOrganizer, FileOrganizer>();
 var app = builder.Build();
 
